@@ -42,6 +42,7 @@ class OpenposeThead(QThread):
         try:
             while True:
                 ret, frame = self.cap.read()
+                # frame = cv2.imread('media/2.jpg')
                 if frame is None:
                     print("读取摄像头失败")
                     return

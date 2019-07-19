@@ -14,7 +14,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         super(MyApp, self).__init__()
         self.setupUi(self)
         self.setWindowTitle("Openpose GUI")
-        self.setWindowIcon(QIcon('static/logo.png'))
+        self.setWindowIcon(QIcon('media/logo.png'))
 
         self.param = {
             "model_folder": "models/",
@@ -62,6 +62,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.treeView_file.setRootIndex(tree_model.index(os.getcwd()))
         self.treeView_file.show()
 
+        self.label_frame.setScaledContents(True)
         self.openpose_thread.start()
 
     def checkBody(self, status):
