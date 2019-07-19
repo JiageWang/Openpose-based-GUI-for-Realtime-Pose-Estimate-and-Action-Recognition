@@ -3,6 +3,7 @@ import cv2
 import os
 import argparse
 import numpy as np
+
 np.set_printoptions(precision=3)
 
 # 导入openpose路径
@@ -19,7 +20,7 @@ except ImportError as e:
 
 # 命令行参数
 parser = argparse.ArgumentParser()
-parser.add_argument("--image_path", default="media/2.jpg",
+parser.add_argument("--image_path", default="media/1.jpg",
                     help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
 args = parser.parse_known_args()
 
@@ -40,22 +41,21 @@ for i in range(0, len(args[1])):
         if key not in params:
             params[key] = next_item
 
+try:
+    # Starting OpenPose
+    opWrapper = op.WrapperPython()
+    opWrapper.configure(params)
+    opWrapper.start()
 
+    # Process Image
+    datum = op.Datum()
+    imageToProcess = cv2.imread(args[0].image_path)
+    datum.cvInputData = imageToProcess
+    opWrapper.emplaceAndPop([datum])
 
-# 新建openpose的封装
-opWrapper = op.WrapperPython()
-opWrapper.configure(params)
-opWrapper.start()
-
-datum = op.Datum()
-datum.cvInputData = cv2.imread(args[0].image_path)
-opWrapper.emplaceAndPop([datum])
-
-# Display Image
-print("Body keypoints: \n" + str(datum.poseKeypoints))
-print("Left hand keypoints: \n" + str(datum.handKeypoints[0]))
-print("Right hand keypoints: \n" + str(datum.handKeypoints[1]))
-
-cv2.imshow("OpenPose", datum.cvOutputData)
-cv2.waitKey()
-cv2.destroyAllWindows()
+    # Display Image
+    print("Body keypoints: \n" + str(datum.poseKeypoints))
+    cv2.imshow("OpenPose 1.5.0 - Tutorial Python API", datum.cvOutputData)
+    cv2.waitKey(0)
+except Exception as e:
+    sys.exit(-1)

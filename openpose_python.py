@@ -17,7 +17,7 @@ except ImportError as e:
 
 # Flags
 parser = argparse.ArgumentParser()
-parser.add_argument("--image_path", default="../../../examples/media/COCO_val2014_000000000192.jpg",
+parser.add_argument("--image_path", default="/media/1.jpg",
                     help="Process an image. Read all standard formats (jpg, png, bmp, etc.).")
 args = parser.parse_known_args()
 
