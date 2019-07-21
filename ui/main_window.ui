@@ -20,7 +20,7 @@
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
-         <widget class="QPushButton" name="pushButton">
+         <widget class="QPushButton" name="pushButton_webcam">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -28,12 +28,12 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Open Camera</string>
+           <string>Open Webcam</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="pushButton_4">
+         <widget class="QPushButton" name="pushButton_record">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -46,7 +46,7 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QPushButton" name="pushButton_2">
+         <widget class="QPushButton" name="pushButton_snipaste">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -54,12 +54,12 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Open Image</string>
+           <string>Screen Shot</string>
           </property>
          </widget>
         </item>
         <item row="1" column="1">
-         <widget class="QPushButton" name="pushButton_3">
+         <widget class="QPushButton" name="pushButton_folder">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -67,7 +67,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Open Image Folder</string>
+           <string>Change Folder</string>
           </property>
          </widget>
         </item>

@@ -19,30 +19,21 @@ except ImportError as e:
 
 class OpenposeThead(QThread):
     """多线程处理图像"""
-    def __init__(self, label, param={"model_folder": "models/"}):
+    def __init__(self, label, op_wrapper):
         super(OpenposeThead, self).__init__()
         self.label = label
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(3, 640)
-        self.cap.set(4, 480)
-        self.op_wrapper = op.WrapperPython()
-        self.op_wrapper.configure(param)
-        self.op_wrapper.start()
+        self.op_wrapper = op_wrapper
         self.datum = op.Datum()
         self.working = True
 
-    def config_wrapper(self, params):
-        self.working = False
-        self.op_wrapper.stop()
-        self.op_wrapper.configure(params)
-        self.op_wrapper.start()
-        self.working = True
-
     def run(self):
+        self.cap = cv2.VideoCapture(0)
+        self.cap.set(3, 640)
+        self.cap.set(4, 480)
+        self.op_wrapper.start()
         try:
             while True:
                 ret, frame = self.cap.read()
-                # frame = cv2.imread('media/2.jpg')
                 if frame is None:
                     print("读取摄像头失败")
                     return
@@ -50,8 +41,8 @@ class OpenposeThead(QThread):
                 if self.working:
                     self.op_wrapper.emplaceAndPop([self.datum])
                     self.updata_label(self.datum.cvOutputData)
-        except Exception as e:
-            print("openpose thread error", e)
+        except Exception as error:
+            print("openpose thread error", error)
 
     def updata_label(self, frame):
         img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # bgr -> rgb
@@ -59,3 +50,9 @@ class OpenposeThead(QThread):
         image = QImage(img, w, h, 3 * w, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(image)
         self.label.setPixmap(pixmap)
+
+    def terminate(self):
+        if self.cap.isOpened():
+            self.cap.release()
+        self.label.clear()
+        super().terminate()
