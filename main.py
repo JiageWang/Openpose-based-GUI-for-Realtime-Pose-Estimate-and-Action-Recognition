@@ -1,18 +1,15 @@
 import os
 import sys
-import cgitb
-
 import cv2
-
-cgitb.enable(format='text')
+import copy
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QImage, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QApplication, QDirModel, QFileDialog, QWidget, QLabel
-# from PyQt5.uic import loadUiType
+from PyQt5.QtWidgets import QMainWindow, QApplication, QDirModel, QFileDialog, QMessageBox
+from PyQt5.uic import loadUi
 
-from ui.main_window import Ui_MainWindow  # 由qtdesigner 生成的布局
 from openpose_thread import OpenposeThead
+from save_window import FrameSaveWindow
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 try:
@@ -25,38 +22,25 @@ except ImportError as e:
             have this Python script in the right folder?')
     raise e
 
-from ui.snipaste_window import Ui_Snipaste
 
-
-class SnipasteWindow(QWidget, Ui_Snipaste):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-        self.setWindowTitle("Snipaste")
-        self.pushButton_save.clicked.connect(self.saveSnipaste)
-        self.pushButton_cancel.clicked.connect(self.cancelSnipaste)
-
-    def saveSnipaste(self):
-        self.label_frame.pixmap().save("1.jpg")
-        self.setHidden(True)
-
-    def cancelSnipaste(self):
-        self.setHidden(True)
-
-    def setPixmap(self, pixmap):
-        self.label_frame.setPixmap(pixmap)
-
-
-class MyApp(QMainWindow, Ui_MainWindow):
+class MyApp(QMainWindow):
     def __init__(self):
         super(MyApp, self).__init__()
-        self.setupUi(self)
+        loadUi("ui/main_window.ui", self)
+        # self.setupUi(self)
         self.setWindowTitle("Openpose GUI")
         self.setWindowIcon(QIcon('media/logo.png'))
+        self.initOpenpose()
+        self.initCheckBox()
+        self.initPushButton()
+        self.initRadioButton()
+        self.initSlider()
+        self.initTreeview()
+        self.initOthers()
 
-        # Init openpose
+    def initOpenpose(self):
         self.params = {
-            "net_resolution": "128x96",
+            # "net_resolution": "128x96",
             "model_folder": "models/",
             "body": 1,
             "render_pose": 0,
@@ -70,10 +54,13 @@ class MyApp(QMainWindow, Ui_MainWindow):
             "disable_blending": False  # black blackgroud if True
         }
 
+        self.datum = op.Datum()
         self.op_wrapper = op.WrapperPython()
         self.op_wrapper.configure(self.params)
-        self.openpose_thread = OpenposeThead(self.label_frame, self.op_wrapper)
+        self.op_wrapper.start()
+        self.openpose_thread = OpenposeThead(self.label_frame, self.op_wrapper, self.datum)
 
+    def initCheckBox(self):
         # 初始化复选框
         self.checkBox_body.setChecked(False)  # 默认设置为选中
         self.checkBox_hand.setChecked(False)  # 默认设置为选中
@@ -83,18 +70,22 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.checkBox_face.stateChanged.connect(self.checkFace)  # 状态改变触发check_box_changed函数
 
         # 单选框
+
+    def initRadioButton(self):
+        self.radioButton_black.setEnabled(False)
+        self.radioButton_rgb.setEnabled(False)
         self.radioButton_black.setChecked(False)
         self.radioButton_rgb.setChecked(True)
         self.radioButton_black.toggled.connect(self.changeBackground)
         self.radioButton_rgb.toggled.connect(self.changeBackground)
 
-
-        # config pushButton
+    def initPushButton(self):
         self.pushButton_webcam.clicked.connect(self.runWebcam)
         self.pushButton_folder.clicked.connect(self.changeFolder)
-        self.pushButton_snipaste.clicked.connect(self.getSnipaste)
+        self.pushButton_save.clicked.connect(self.saveFrame)
+        self.pushButton_record.clicked.connect(self.beginRecord)
 
-        # 初始化滑动条
+    def initSlider(self):
         self.horizontalSlider_Body.setEnabled(False)
         self.horizontalSlider_Hand.setEnabled(False)
         self.horizontalSlider_Face.setEnabled(False)
@@ -110,10 +101,11 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.label_threshold_body.setText(str(1))
         self.label_threshold_hand.setText(str(20))
         self.label_threshold_face.setText(str(40))
-        self.horizontalSlider_Body.valueChanged.connect(self.changeBodyThreshold)
-        self.horizontalSlider_Face.valueChanged.connect(self.changeFaceThreshold)
-        self.horizontalSlider_Hand.valueChanged.connect(self.changeHandThreshold)
+        self.horizontalSlider_Body.sliderReleased.connect(self.changeBodyThreshold)
+        self.horizontalSlider_Face.sliderReleased.connect(self.changeFaceThreshold)
+        self.horizontalSlider_Hand.sliderReleased.connect(self.changeHandThreshold)
 
+    def initTreeview(self):
         # 目录树
         self.tree_model = QDirModel()
         self.treeView_file.setModel(self.tree_model)
@@ -121,21 +113,30 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.treeView_file.show()
         self.treeView_file.doubleClicked.connect(self.treeClicked)
 
+    def initOthers(self):
         # 图像显示标签
         self.label_frame.setScaledContents(True)
-        self.snipaste = SnipasteWindow()
+        self.save_window = FrameSaveWindow()
+
+        self.webcam_open = False
 
     def treeClicked(self, file_index):
         file_name = self.tree_model.filePath(file_index)
         if file_name.endswith(('.jpg', '.png')):
+            if self.webcam_open:
+                QMessageBox.information(self, "Note", "Please stop webcam first", QMessageBox.Yes)
+                return
             img = cv2.imread(file_name)
-            result = self.openpose_image(img)
-            h, w, c = result.shape  # 获取图片形状
-            result = QImage(result, w, h, 3 * w, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(result)
-            self.label_frame.setPixmap(pixmap)
+            result = self.openposeImage(img)
+            self.updateLabel(result)
 
-    def openpose_image(self, img):
+    def updateLabel(self, frame):
+        h, w, c = frame.shape  # 获取图片形状
+        image = QImage(frame, w, h, 3 * w, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(image)
+        self.label_frame.setPixmap(pixmap)
+
+    def openposeImage(self, img):
         datum = op.Datum()
         datum.cvInputData = img
         self.op_wrapper.emplaceAndPop([datum])
@@ -150,24 +151,32 @@ class MyApp(QMainWindow, Ui_MainWindow):
             self.params['disable_blending'] = False
         self.update_wrapper()
 
-
     def changeFolder(self):
         folder_name = QFileDialog.getExistingDirectory(self, '标题', './')  # 可设置默认路径
         if folder_name:
             self.treeView_file.setRootIndex(self.tree_model.index(folder_name))
             self.treeView_file.show()
 
-    def getSnipaste(self):
+    def saveFrame(self):
         pixmap = self.label_frame.pixmap()
+        body_keypoint = copy.deepcopy(self.datum.poseKeypoints) if self.checkBox_body.isChecked() else None
+        hand_keypoint = copy.deepcopy(self.datum.handKeypoints) if self.checkBox_hand.isChecked() else None
         if pixmap:
-            self.snipaste.setPixmap(pixmap)
-            self.snipaste.show()
+            self.save_window.setFrame(pixmap, body_keypoint, hand_keypoint)
+            self.save_window.show()
+        else:
+            QMessageBox.warning(self, "Note", "No data in frame", QMessageBox.Yes)
+
+    def beginRecord(self):
+        pass
 
     def runWebcam(self):
         if self.pushButton_webcam.text() == "Open Webcam":
+            self.webcam_open = True
             self.openpose_thread.start()
             self.pushButton_webcam.setText("Stop Webcam")
         else:
+            self.webcam_open = False
             self.openpose_thread.terminate()
             self.pushButton_webcam.setText("Open Webcam")
 
@@ -175,6 +184,8 @@ class MyApp(QMainWindow, Ui_MainWindow):
         flag = True if status == Qt.Checked else False
         render_pose = 1 if status == Qt.Checked else 0
         self.horizontalSlider_Body.setEnabled(flag)
+        self.radioButton_black.setEnabled(flag)
+        self.radioButton_rgb.setEnabled(flag)
         self.params["render_pose"] = render_pose
         self.update_wrapper()
 
@@ -193,27 +204,26 @@ class MyApp(QMainWindow, Ui_MainWindow):
     def changeBodyThreshold(self):
         value = self.horizontalSlider_Body.value()
         print(value)
-        self.params["render_threshold"] = value/100
+        self.params["render_threshold"] = value / 100
         self.label_threshold_body.setText(str(value))
         self.update_wrapper()
 
     def changeHandThreshold(self):
         value = self.horizontalSlider_Hand.value()
         print(value)
-        self.params["hand_render_threshold"] = value/100
+        self.params["hand_render_threshold"] = value / 100
         self.label_threshold_hand.setText(str(value))
         self.update_wrapper()
 
     def changeFaceThreshold(self):
         value = self.horizontalSlider_Face.value()
         print(value)
-        self.params["face_render_threshold"] = value/100
+        self.params["face_render_threshold"] = value / 100
         self.label_threshold_face.setText(str(value))
         self.update_wrapper()
 
     def update_wrapper(self):
         self.op_wrapper.configure(self.params)
-        print('restart')
         self.op_wrapper.start()
 
 

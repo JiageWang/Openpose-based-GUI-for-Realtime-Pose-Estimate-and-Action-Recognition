@@ -41,12 +41,12 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Begin Recod</string>
+           <string>Begin Record</string>
           </property>
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="QPushButton" name="pushButton_snipaste">
+         <widget class="QPushButton" name="pushButton_save">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -54,7 +54,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Screen Shot</string>
+           <string>Save Frame</string>
           </property>
          </widget>
         </item>
@@ -325,7 +325,7 @@
       <item>
        <widget class="QTreeView" name="treeView_file">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
