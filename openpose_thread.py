@@ -27,11 +27,11 @@ class OpenposeThead(QThread):
         self.working = True
 
     def run(self):
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(3, 640)
-        self.cap.set(4, 480)
-        self.op_wrapper.start()
         try:
+            self.cap = cv2.VideoCapture(0)
+            self.cap.set(3, 640)
+            self.cap.set(4, 480)
+            self.op_wrapper.start()
             while True:
                 ret, frame = self.cap.read()
                 if frame is None:
@@ -41,18 +41,30 @@ class OpenposeThead(QThread):
                 if self.working:
                     self.op_wrapper.emplaceAndPop([self.datum])
                     self.updata_label(self.datum.cvOutputData)
-        except Exception as error:
-            print("openpose thread error", error)
+        except Exception as e:
+            print('error')
+            with open('log.txt', 'w') as f:
+                f.write(e)
 
     def updata_label(self, frame):
-        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # bgr -> rgb
-        h, w, c = img.shape  # 获取图片形状
-        image = QImage(img, w, h, 3 * w, QImage.Format_RGB888)
-        pixmap = QPixmap.fromImage(image)
-        self.label.setPixmap(pixmap)
+        try:
+            img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # bgr -> rgb
+            h, w, c = img.shape  # 获取图片形状
+            image = QImage(img, w, h, 3 * w, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(image)
+            self.label.setPixmap(pixmap)
+        except Exception as e:
+            print('error')
+            with open('log.txt', 'w') as f:
+                f.write(e)
 
     def terminate(self):
-        if self.cap.isOpened():
-            self.cap.release()
-        self.label.clear()
-        super().terminate()
+        try:
+            if self.cap.isOpened():
+                self.cap.release()
+            self.label.clear()
+            super().terminate()
+        except Exception as e:
+            print('error')
+            with open('log.txt', 'w') as f:
+                f.write(e)
