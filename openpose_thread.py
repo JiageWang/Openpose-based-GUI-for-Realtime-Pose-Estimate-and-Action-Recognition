@@ -2,7 +2,7 @@ import os
 import cv2
 import sys
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QMutexLocker
 from PyQt5.QtGui import QImage, QPixmap
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -23,23 +23,23 @@ class OpenposeThead(QThread):
 
     def __init__(self, label, op_wrapper, datum):
         super(OpenposeThead, self).__init__()
+        self.cap = cv2.VideoCapture()
         self.label = label
         self.op_wrapper = op_wrapper
         self.datum = datum
+        self.mutex = QMutex()
 
     def run(self):
-        self.cap = cv2.VideoCapture(0)
+        self.cap.open(0)
         self.cap.set(3, 640)
         self.cap.set(4, 480)
         self.op_wrapper.start()
         while True:
             ret, frame = self.cap.read()
-            if frame is None:
-                print("读取摄像头失败")
-                return
-            self.datum.cvInputData = frame
-            self.op_wrapper.emplaceAndPop([self.datum])
-            self.updata_label(self.datum.cvOutputData)
+            with QMutexLocker(self.mutex):
+                self.datum.cvInputData = frame
+                self.op_wrapper.emplaceAndPop([self.datum])
+                self.updata_label(self.datum.cvOutputData)
 
     def updata_label(self, frame):
         img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # bgr -> rgb

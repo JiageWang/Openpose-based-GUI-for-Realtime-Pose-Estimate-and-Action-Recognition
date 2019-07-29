@@ -22,7 +22,7 @@
         <item row="0" column="0">
          <widget class="QPushButton" name="pushButton_webcam">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -30,12 +30,33 @@
           <property name="text">
            <string>Open Webcam</string>
           </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>../media/camera.png</normaloff>../media/camera.png</iconset>
+          </property>
          </widget>
         </item>
-        <item row="0" column="1">
+        <item row="2" column="0">
+         <widget class="QPushButton" name="pushButton_save">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Save Result</string>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>../media/snipaste.png</normaloff>../media/snipaste.png</iconset>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
          <widget class="QPushButton" name="pushButton_record">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -43,31 +64,26 @@
           <property name="text">
            <string>Begin Record</string>
           </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QPushButton" name="pushButton_save">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>Save Frame</string>
+          <property name="icon">
+           <iconset>
+            <normaloff>../media/record.png</normaloff>../media/record.png</iconset>
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
+        <item row="0" column="1">
          <widget class="QPushButton" name="pushButton_folder">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Change Folder</string>
+           <string>Alter Folder</string>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>../media/folder.png</normaloff>../media/folder.png</iconset>
           </property>
          </widget>
         </item>

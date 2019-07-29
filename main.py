@@ -5,11 +5,11 @@ import copy
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QImage, QPixmap
-from PyQt5.QtWidgets import QMainWindow, QApplication, QDirModel, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QApplication, QDirModel, QFileDialog, QMessageBox, QPushButton
 from PyQt5.uic import loadUi
 
 from openpose_thread import OpenposeThead
-from save_window import FrameSaveWindow
+from save_window import SaveWindow
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 try:
@@ -30,15 +30,7 @@ class MyApp(QMainWindow):
         # self.setupUi(self)
         self.setWindowTitle("Openpose GUI")
         self.setWindowIcon(QIcon('media/logo.png'))
-        self.initOpenpose()
-        self.initCheckBox()
-        self.initPushButton()
-        self.initRadioButton()
-        self.initSlider()
-        self.initTreeview()
-        self.initOthers()
 
-    def initOpenpose(self):
         self.params = {
             # "net_resolution": "128x96",
             "model_folder": "models/",
@@ -56,9 +48,22 @@ class MyApp(QMainWindow):
 
         self.datum = op.Datum()
         self.op_wrapper = op.WrapperPython()
+        self.tree_model = QDirModel()
+        self.openpose_thread = OpenposeThead(self.label_frame, self.op_wrapper, self.datum)
+        self.save_window = SaveWindow()
+        self.webcam_open = False
+
+        self.initOpenpose()
+        self.initCheckBox()
+        self.initPushButton()
+        self.initRadioButton()
+        self.initSlider()
+        self.initTreeview()
+        self.initOthers()
+
+    def initOpenpose(self):
         self.op_wrapper.configure(self.params)
         self.op_wrapper.start()
-        self.openpose_thread = OpenposeThead(self.label_frame, self.op_wrapper, self.datum)
 
     def initCheckBox(self):
         # 初始化复选框
@@ -82,7 +87,7 @@ class MyApp(QMainWindow):
     def initPushButton(self):
         self.pushButton_webcam.clicked.connect(self.runWebcam)
         self.pushButton_folder.clicked.connect(self.changeFolder)
-        self.pushButton_save.clicked.connect(self.saveFrame)
+        self.pushButton_save.clicked.connect(self.saveCurrent)
         self.pushButton_record.clicked.connect(self.beginRecord)
 
     def initSlider(self):
@@ -107,7 +112,6 @@ class MyApp(QMainWindow):
 
     def initTreeview(self):
         # 目录树
-        self.tree_model = QDirModel()
         self.treeView_file.setModel(self.tree_model)
         self.treeView_file.setRootIndex(self.tree_model.index(os.getcwd()))
         self.treeView_file.show()
@@ -116,9 +120,6 @@ class MyApp(QMainWindow):
     def initOthers(self):
         # 图像显示标签
         self.label_frame.setScaledContents(True)
-        self.save_window = FrameSaveWindow()
-
-        self.webcam_open = False
 
     def treeClicked(self, file_index):
         file_name = self.tree_model.filePath(file_index)
@@ -157,12 +158,12 @@ class MyApp(QMainWindow):
             self.treeView_file.setRootIndex(self.tree_model.index(folder_name))
             self.treeView_file.show()
 
-    def saveFrame(self):
+    def saveCurrent(self):
         pixmap = self.label_frame.pixmap()
-        body_keypoint = copy.deepcopy(self.datum.poseKeypoints) if self.checkBox_body.isChecked() else None
-        hand_keypoint = copy.deepcopy(self.datum.handKeypoints) if self.checkBox_hand.isChecked() else None
         if pixmap:
-            self.save_window.setFrame(pixmap, body_keypoint, hand_keypoint)
+            body_keypoint = copy.deepcopy(self.datum.poseKeypoints) if self.checkBox_body.isChecked() else None
+            hand_keypoint = copy.deepcopy(self.datum.handKeypoints) if self.checkBox_hand.isChecked() else None
+            self.save_window.setFrame(pixmap.copy(), body_keypoint, hand_keypoint)
             self.save_window.show()
         else:
             QMessageBox.warning(self, "Note", "No data in frame", QMessageBox.Yes)
@@ -171,14 +172,14 @@ class MyApp(QMainWindow):
         pass
 
     def runWebcam(self):
-        if self.pushButton_webcam.text() == "Open Webcam":
-            self.webcam_open = True
-            self.openpose_thread.start()
-            self.pushButton_webcam.setText("Stop Webcam")
-        else:
-            self.webcam_open = False
+        if self.webcam_open:
             self.openpose_thread.terminate()
+            self.webcam_open = False
             self.pushButton_webcam.setText("Open Webcam")
+        else:
+            self.openpose_thread.start()
+            self.webcam_open = True
+            self.pushButton_webcam.setText("Stop Webcam")
 
     def checkBody(self, status):
         flag = True if status == Qt.Checked else False
@@ -223,8 +224,13 @@ class MyApp(QMainWindow):
         self.update_wrapper()
 
     def update_wrapper(self):
-        self.op_wrapper.configure(self.params)
-        self.op_wrapper.start()
+        if self.webcam_open:
+            self.openpose_thread.terminate()
+            self.op_wrapper.configure(self.params)
+            self.openpose_thread.start()
+        else:
+            self.op_wrapper.configure(self.params)
+
 
 
 if __name__ == "__main__":

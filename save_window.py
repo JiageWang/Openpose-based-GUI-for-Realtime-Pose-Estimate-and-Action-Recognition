@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.uic import loadUi
 
 
-class FrameSaveWindow(QWidget):
+class SaveWindow(QWidget):
     def __init__(self):
         super().__init__()
         loadUi("ui/save_window.ui", self)
@@ -13,10 +13,10 @@ class FrameSaveWindow(QWidget):
         self.setWindowTitle("Snipaste")
         self.body_keypoint = None
         self.hand_keypoint = None
-        self.pushButton_save.clicked.connect(self.saveFrame)
+        self.pushButton_save.clicked.connect(self.saveCurrent)
         self.pushButton_cancel.clicked.connect(self.cancelSnipaste)
 
-    def saveFrame(self):
+    def saveCurrent(self):
         timestamp = str(int(time.time()))
         print("saving ", timestamp)
         self.label_frame.pixmap().save("{}.jpg".format(timestamp))
