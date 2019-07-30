@@ -11,7 +11,7 @@
 5. copy `cudnn64_7.dll`, `curand64_100.dll`, `opencv_world401d.dll` from your own path to folder 3rdparty
 6. run `python openpose_python.py` for run in command line
 7. run `python main.py` for run with gui
-    * button `Save Frame` for saving the output image and keypoint
+    * button `Save Result` for saving the current output image and keypoint
     * drop slider to control the output threshold
     * select checkbox to control the keypoint you want to get
     * double click image file in treeview to get openpose result from image
