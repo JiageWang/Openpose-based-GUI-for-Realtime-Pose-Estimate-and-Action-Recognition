@@ -8,7 +8,7 @@
 2. install cudnn7
 3. run `models/getModels.bat` to get model
 4. run `pip install opencv-python` to install opencv in python
-5. copy `cudnn64_7.dll`, `curand64_100.dll`, `opencv_world401d.dll` from your own path to folder 3rdparty
+5. download dll from [https://pan.baidu.com/s/1Cco38Py2G70s559qDt_g6g](https://pan.baidu.com/s/1Cco38Py2G70s559qDt_g6g) password：`64sg` and unzip in your 3rdparty folder
 6. run `python openpose_python.py` for run in command line
 7. run `python main.py` for run with gui
     * button `Save Result` for saving the current output image and keypoint
