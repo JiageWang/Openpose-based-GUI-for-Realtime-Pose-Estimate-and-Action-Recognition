@@ -18,10 +18,7 @@
 
 
 ## example
-* GUI       
 ![avatar](media/gui.png)
-* image     
-![avatar](media/my.png)
 
 ## References
 [Openpose](https://github.com/CMU-Perceptual-Computing-Lab/openpose)

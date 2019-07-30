@@ -160,7 +160,8 @@ class MyApp(QMainWindow):
             if self.webcam_open:
                 QMessageBox.information(self, "Note", "Please stop webcam first", QMessageBox.Yes)
                 return
-            img = cv2.imread(file_name)
+            img = cv2.imdecode(np.fromfile(file_name, dtype=np.uint8), -1)  # -1表示cv2.IMREAD_UNCHANGED
+            print(img.shape)
             result = self.process_image(img)
             self.update_label(result)
 
