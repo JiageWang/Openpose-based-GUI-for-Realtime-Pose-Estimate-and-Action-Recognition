@@ -3,12 +3,11 @@ import sys
 import cv2
 import copy
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import QMainWindow, QApplication, QDirModel, QFileDialog, QMessageBox, QPushButton
 from PyQt5.uic import loadUi
 
-from openpose_thread import OpenposeThead
 from save_window import SaveWindow
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -27,7 +26,6 @@ class MyApp(QMainWindow):
     def __init__(self):
         super(MyApp, self).__init__()
         loadUi("ui/main_window.ui", self)
-        # self.setupUi(self)
         self.setWindowTitle("Openpose GUI")
         self.setWindowIcon(QIcon('media/logo.png'))
 
@@ -49,7 +47,9 @@ class MyApp(QMainWindow):
         self.datum = op.Datum()
         self.op_wrapper = op.WrapperPython()
         self.tree_model = QDirModel()
-        self.openpose_thread = OpenposeThead(self.label_frame, self.op_wrapper, self.datum)
+        self.cap = cv2.VideoCapture()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.showFrame)
         self.save_window = SaveWindow()
         self.webcam_open = False
 
@@ -66,7 +66,6 @@ class MyApp(QMainWindow):
         self.op_wrapper.start()
 
     def initCheckBox(self):
-        # 初始化复选框
         self.checkBox_body.setChecked(False)  # 默认设置为选中
         self.checkBox_hand.setChecked(False)  # 默认设置为选中
         self.checkBox_face.setChecked(False)  # 默认设置为选中
@@ -74,7 +73,6 @@ class MyApp(QMainWindow):
         self.checkBox_hand.stateChanged.connect(self.checkHand)  # 状态改变触发check_box_changed函数
         self.checkBox_face.stateChanged.connect(self.checkFace)  # 状态改变触发check_box_changed函数
 
-        # 单选框
 
     def initRadioButton(self):
         self.radioButton_black.setEnabled(False)
@@ -82,7 +80,7 @@ class MyApp(QMainWindow):
         self.radioButton_black.setChecked(False)
         self.radioButton_rgb.setChecked(True)
         self.radioButton_black.toggled.connect(self.changeBackground)
-        self.radioButton_rgb.toggled.connect(self.changeBackground)
+        # self.radioButton_rgb.toggled.connect(self.changeBackground)
 
     def initPushButton(self):
         self.pushButton_webcam.clicked.connect(self.runWebcam)
@@ -121,6 +119,11 @@ class MyApp(QMainWindow):
         # 图像显示标签
         self.label_frame.setScaledContents(True)
 
+    def showFrame(self):
+        _, frame = self.cap.read()
+        img = self.openposeImage(frame)
+        self.updateLabel(img)
+
     def treeClicked(self, file_index):
         file_name = self.tree_model.filePath(file_index)
         if file_name.endswith(('.jpg', '.png')):
@@ -138,10 +141,9 @@ class MyApp(QMainWindow):
         self.label_frame.setPixmap(pixmap)
 
     def openposeImage(self, img):
-        datum = op.Datum()
-        datum.cvInputData = img
-        self.op_wrapper.emplaceAndPop([datum])
-        result = datum.cvOutputData
+        self.datum.cvInputData = img
+        self.op_wrapper.emplaceAndPop([self.datum])
+        result = self.datum.cvOutputData
         result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)  # bgr -> rgb
         return result
 
@@ -150,7 +152,7 @@ class MyApp(QMainWindow):
             self.params['disable_blending'] = True
         else:
             self.params['disable_blending'] = False
-        self.update_wrapper()
+        self.updateWrapper()
 
     def changeFolder(self):
         folder_name = QFileDialog.getExistingDirectory(self, '标题', './')  # 可设置默认路径
@@ -163,7 +165,8 @@ class MyApp(QMainWindow):
         if pixmap:
             body_keypoint = copy.deepcopy(self.datum.poseKeypoints) if self.checkBox_body.isChecked() else None
             hand_keypoint = copy.deepcopy(self.datum.handKeypoints) if self.checkBox_hand.isChecked() else None
-            self.save_window.setFrame(pixmap.copy(), body_keypoint, hand_keypoint)
+            face_keypoint = copy.deepcopy(self.datum.faceKeypoints) if self.checkBox_face.isChecked() else None
+            self.save_window.setFrame(pixmap.copy(), body_keypoint, hand_keypoint, face_keypoint)
             self.save_window.show()
         else:
             QMessageBox.warning(self, "Note", "No data in frame", QMessageBox.Yes)
@@ -173,12 +176,15 @@ class MyApp(QMainWindow):
 
     def runWebcam(self):
         if self.webcam_open:
-            self.openpose_thread.terminate()
             self.webcam_open = False
+            self.cap.release()
+            self.label_frame.clear()
+            self.timer.stop()
             self.pushButton_webcam.setText("Open Webcam")
         else:
-            self.openpose_thread.start()
             self.webcam_open = True
+            self.cap.open(0)
+            self.timer.start(20)
             self.pushButton_webcam.setText("Stop Webcam")
 
     def checkBody(self, status):
@@ -188,49 +194,44 @@ class MyApp(QMainWindow):
         self.radioButton_black.setEnabled(flag)
         self.radioButton_rgb.setEnabled(flag)
         self.params["render_pose"] = render_pose
-        self.update_wrapper()
+        self.updateWrapper()
 
     def checkHand(self, status):
         flag = True if status == Qt.Checked else False
         self.horizontalSlider_Hand.setEnabled(flag)
         self.params["hand"] = flag
-        self.update_wrapper()
+        self.updateWrapper()
 
     def checkFace(self, status):
         flag = True if status == Qt.Checked else False
         self.horizontalSlider_Face.setEnabled(flag)
         self.params["face"] = flag
-        self.update_wrapper()
+        self.updateWrapper()
 
     def changeBodyThreshold(self):
         value = self.horizontalSlider_Body.value()
         print(value)
         self.params["render_threshold"] = value / 100
         self.label_threshold_body.setText(str(value))
-        self.update_wrapper()
+        self.updateWrapper()
 
     def changeHandThreshold(self):
         value = self.horizontalSlider_Hand.value()
         print(value)
         self.params["hand_render_threshold"] = value / 100
         self.label_threshold_hand.setText(str(value))
-        self.update_wrapper()
+        self.updateWrapper()
 
     def changeFaceThreshold(self):
         value = self.horizontalSlider_Face.value()
         print(value)
         self.params["face_render_threshold"] = value / 100
         self.label_threshold_face.setText(str(value))
-        self.update_wrapper()
+        self.updateWrapper()
 
-    def update_wrapper(self):
-        if self.webcam_open:
-            self.openpose_thread.terminate()
-            self.op_wrapper.configure(self.params)
-            self.openpose_thread.start()
-        else:
-            self.op_wrapper.configure(self.params)
-
+    def updateWrapper(self):
+        self.op_wrapper.configure(self.params)
+        self.op_wrapper.start()
 
 
 if __name__ == "__main__":

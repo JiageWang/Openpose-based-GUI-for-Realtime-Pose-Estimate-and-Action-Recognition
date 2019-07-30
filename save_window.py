@@ -9,10 +9,10 @@ class SaveWindow(QWidget):
     def __init__(self):
         super().__init__()
         loadUi("ui/save_window.ui", self)
-        # self.setupUi(self)
         self.setWindowTitle("Snipaste")
         self.body_keypoint = None
         self.hand_keypoint = None
+        self.face_keypoint = None
         self.pushButton_save.clicked.connect(self.saveCurrent)
         self.pushButton_cancel.clicked.connect(self.cancelSnipaste)
 
@@ -26,14 +26,18 @@ class SaveWindow(QWidget):
         if self.hand_keypoint is not None:
             np.save("{}_hand.npy".format(timestamp), self.hand_keypoint)
             self.hand_keypoint = None
+        if self.face_keypoint is not None:
+            np.save("{}_face.npy".format(timestamp), self.face_keypoint)
+            self.face_keypoint = None
         self.close()
 
     def cancelSnipaste(self):
         self.setHidden(True)
         self.close()
 
-    def setFrame(self, pixmap, body_keyppoint, hand_keypoint):
+    def setFrame(self, pixmap, body_keyppoint, hand_keypoint, face_keypoint):
         self.label_frame.setPixmap(pixmap)
         self.body_keypoint = body_keyppoint
         self.hand_keypoint = hand_keypoint
+        self.face_keypoint = face_keypoint
         self.show()
