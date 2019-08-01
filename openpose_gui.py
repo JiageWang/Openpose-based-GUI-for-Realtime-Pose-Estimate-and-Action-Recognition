@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QDirModel, QFileDialog, Q
 from PyQt5.uic import loadUi
 
 from save_window import SaveWindow
+from train import Model
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 try:
@@ -22,6 +23,16 @@ except ImportError as e:
             Did you enable `BUILD_PYTHON` in CMake and \
             have this Python script in the right folder?')
     raise e
+
+import torch
+import torch.nn.functional as F
+from torchvision.transforms import ToTensor
+
+model = Model(42, 28, 3)
+model.load_state_dict(torch.load("model@acc0.980.pth"))
+model = model.cuda().eval()
+# class_to_idx = {'eight': 0, 'handssors': 1, 'normal': 2}
+idx_to_class = {0: 'eight', 1: 'handssors', 2: 'normal'}
 
 
 class MyApp(QMainWindow):
@@ -152,6 +163,27 @@ class MyApp(QMainWindow):
                 np.save(face, self.datum.faceKeypoints)
             t = str(time.time() - self.start_time)[:4]
             cv2.putText(img, t, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
+
+        if self.checkBox_hand.isChecked():
+            hand_keypoints = self.datum.handKeypoints
+            # print(type(hand_keypoint))  # list
+            # print(len(hand_keypoint))  # 2
+            # print(type(hand_keypoint[0]))  # 左手 ndarray
+            # print(hand_keypoint[0].shape)  # shape = (num_person, 21, 3)
+            for hand in hand_keypoints:
+                if hand.size == 1: continue
+                for i in range(hand.shape[0]):
+                    single_hand = hand[i, :, :2]
+                    single_hand[:, 0] /= 640
+                    single_hand[:, 1] /= 480
+                    single_hand = ToTensor()(single_hand).cuda()
+                    single_hand = single_hand.view(1, -1)
+                    out = model(single_hand)
+                    out = F.softmax(out)
+                    # print(out)
+                    if torch.max(out, 1)[0].item() > 0.70:
+                        print(idx_to_class[torch.max(out, 1)[1].item()])
+
         self.update_label(img)
 
     def tree_clicked(self, file_index):
@@ -160,8 +192,7 @@ class MyApp(QMainWindow):
             if self.webcam_open:
                 QMessageBox.information(self, "Note", "Please stop webcam first", QMessageBox.Yes)
                 return
-            img = cv2.imdecode(np.fromfile(file_name, dtype=np.uint8), -1)  # -1表示cv2.IMREAD_UNCHANGED
-            print(img.shape)
+            img = cv2.imdecode(np.fromfile(file_name, dtype=np.uint8), cv2.IMREAD_COLOR)  # -1表示cv2.IMREAD_UNCHANGED
             result = self.process_image(img)
             self.update_label(result)
 

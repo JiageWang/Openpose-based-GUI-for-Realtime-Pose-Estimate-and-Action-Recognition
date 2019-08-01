@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 
@@ -15,19 +16,33 @@ class SaveWindow(QWidget):
         self.face_keypoint = None
         self.pushButton_save.clicked.connect(self.saveCurrent)
         self.pushButton_cancel.clicked.connect(self.cancelSnipaste)
+        self.output_path = "output"
+        self.output_img_path = os.path.join(self.output_path, "img")
+        self.output_body_path = os.path.join(self.output_path, "body")
+        self.output_hand_path = os.path.join(self.output_path, "hand")
+        self.output_face_path = os.path.join(self.output_path, "face")
+        self.init_out_path()
+        self.count = 102
+
+    def init_out_path(self):
+        if not os.path.exists(self.output_img_path):
+            os.makedirs(self.output_img_path)
+        if not os.path.exists(self.output_hand_path):
+            os.makedirs(self.output_hand_path)
+        if not os.path.exists(self.output_body_path):
+            os.makedirs(self.output_body_path)
 
     def saveCurrent(self):
-        timestamp = str(int(time.time()))
-        print("saving ", timestamp)
-        self.label_frame.pixmap().save("{}.jpg".format(timestamp))
+        self.count += 1
+        self.label_frame.pixmap().save(os.path.join(self.output_img_path, "{:0>4d}.jpg".format(self.count)))
         if self.body_keypoint is not None:
-            np.save("{}_body.npy".format(timestamp), self.body_keypoint)
+            np.save(os.path.join(self.output_body_path, "{:0>4d}_body.npy".format(self.count)), self.body_keypoint)
             self.body_keypoint = None
         if self.hand_keypoint is not None:
-            np.save("{}_hand.npy".format(timestamp), self.hand_keypoint)
+            np.save(os.path.join(self.output_hand_path, "{:0>4d}_hand.npy".format(self.count)), self.hand_keypoint)
             self.hand_keypoint = None
         if self.face_keypoint is not None:
-            np.save("{}_face.npy".format(timestamp), self.face_keypoint)
+            np.save(os.path.join(self.output_face_path, "{:0>4d}_face.npy".format(self.count)), self.face_keypoint)
             self.face_keypoint = None
         self.close()
 
