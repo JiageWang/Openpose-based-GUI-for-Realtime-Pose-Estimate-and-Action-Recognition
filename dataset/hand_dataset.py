@@ -1,13 +1,6 @@
 import os
-import sys
-
-import cv2
 import numpy as np
-import torch
-from torchvision.datasets import ImageFolder
 from torch.utils.data import Dataset, DataLoader
-
-class_to_idx = {"normal": 0}
 
 
 class HandDataset(Dataset):
@@ -37,26 +30,20 @@ class HandDataset(Dataset):
 
     def __getitem__(self, item):
         sample = self.samples[item][0]
-        data = np.load(sample)[:, 0, :, :]
-        if np.sum(data[0, :, 2]) > np.sum(data[1, :, 2]):
-            data = data[0, :, :2]
+        hands_keypoints = np.load(sample)[:, 0, :, :]
+        if np.sum(hands_keypoints[0, :, 2]) > np.sum(hands_keypoints[1, :, 2]):
+            hands_keypoints = hands_keypoints[0, :, :2]
         else:
-            data = data[1, :, :2]
+            hands_keypoints = hands_keypoints[1, :, :2]
 
-        # # 数据增强
-        # x_min = data[:, 0].min()
-        # y_min = data[:, 1].min()
-        # x_move = np.random.randint(int(x_min))
-        # y_move = np.random.randint(int(y_min))
-
-        data[:, 0] = data[:, 0] / 640
-        data[:, 1] = data[:, 1] / 480
+        hands_keypoints[:, 0] = hands_keypoints[:, 0] / 640
+        hands_keypoints[:, 1] = hands_keypoints[:, 1] / 480
         if self.transform:
-            data = self.transform(data)
+            hands_keypoints = self.transform(hands_keypoints)
 
-        label = self.class_to_idx[self.samples[item][1]]
+        hand_label = self.class_to_idx[self.samples[item][1]]
 
-        return data, label
+        return hands_keypoints, hand_label
 
 
 if __name__ == "__main__":

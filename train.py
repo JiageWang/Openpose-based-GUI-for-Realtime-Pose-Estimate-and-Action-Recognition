@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
-from dataset.dataloader import HandDataset
+from dataset.hand_dataset import HandDataset
 
 
 class Model(nn.Module):
@@ -77,6 +77,7 @@ def train(epoch):
     writer.add_scalar("train_acc", acc_epoch, epoch)
     print('loss : %.4f | train_acc : %.4f' % (loss_epoch, acc_epoch), end=" | ")
 
+
 def inference():
     global model
     model.load_state_dict(torch.load("model@acc0.909.pth"))
@@ -88,6 +89,7 @@ def inference():
         outputs = model(inputs)
         print(torch.max(outputs, 1)[1])
         print(targets)
+
 
 if __name__ == "__main__":
     model = Model(42, 28, 3)
@@ -111,5 +113,3 @@ if __name__ == "__main__":
         valid(i)
 
     # inference()
-
-

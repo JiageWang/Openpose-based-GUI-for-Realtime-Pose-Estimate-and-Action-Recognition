@@ -1,7 +1,5 @@
 import sys
-import cv2
 import os
-from sys import platform
 import argparse
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -38,10 +36,6 @@ for i in range(0, len(args[1])):
     elif "--" in curr_item and "--" not in next_item:
         key = curr_item.replace('-', '')
         if key not in params: params[key] = next_item
-
-# Construct it from system arguments
-# op.init_argv(args[1])
-# oppython = op.OpenposePython()
 
 # Starting OpenPose
 opWrapper = op.WrapperPython(3)

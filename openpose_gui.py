@@ -3,8 +3,12 @@ import sys
 import cv2
 import copy
 import time
-
 import numpy as np
+
+import torch
+import torch.nn.functional as F
+from torchvision.transforms import ToTensor
+
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import QMainWindow, QApplication, QDirModel, QFileDialog, QMessageBox
@@ -24,15 +28,6 @@ except ImportError as e:
             have this Python script in the right folder?')
     raise e
 
-import torch
-import torch.nn.functional as F
-from torchvision.transforms import ToTensor
-
-model = Model(42, 28, 3)
-model.load_state_dict(torch.load("model@acc0.980.pth"))
-model = model.cuda().eval()
-# class_to_idx = {'eight': 0, 'handssors': 1, 'normal': 2}
-idx_to_class = {0: 'eight', 1: 'handssors', 2: 'normal'}
 
 
 class MyApp(QMainWindow):
@@ -76,9 +71,14 @@ class MyApp(QMainWindow):
 
         self.webcam_open = False
         self.is_writing = False
+        self.is_gesture_recognition = False
         self.timestamp = ""
         self.start_time = 0
         self.count = 0
+
+        self.gesture_model = self.get_gesture_model("model@acc0.980.pth")
+        self.idx_to_gesture = {0: 'eight', 1: 'handssors', 2: 'normal'}
+        self.gesture_threshold = 0.8
 
         self.init_openpose()
         self.init_checkbox()
@@ -96,9 +96,12 @@ class MyApp(QMainWindow):
         self.checkBox_body.setChecked(False)  # 默认设置为选中
         self.checkBox_hand.setChecked(False)  # 默认设置为选中
         self.checkBox_face.setChecked(False)  # 默认设置为选中
+        self.checkBox_gesture.setChecked(False)  # 默认设置为选中
+        self.checkBox_gesture.setEnabled(False)  # 默认设置为选中
         self.checkBox_body.stateChanged.connect(self.check_body)  # 状态改变触发check_box_changed函数
         self.checkBox_hand.stateChanged.connect(self.check_hand)  # 状态改变触发check_box_changed函数
         self.checkBox_face.stateChanged.connect(self.check_face)  # 状态改变触发check_box_changed函数
+        self.checkBox_gesture.stateChanged.connect(self.check_gesture)
 
     def init_radiobutton(self):
         self.radioButton_black.setEnabled(False)
@@ -146,45 +149,66 @@ class MyApp(QMainWindow):
         # 图像显示标签
         self.label_frame.setScaledContents(True)
 
+    @staticmethod
+    def get_gesture_model(weights_path):
+        model = Model(42, 28, 3)
+        model.load_state_dict(torch.load(weights_path))
+        if torch.cuda.is_available():
+            model = model.cuda()
+        model.eval()
+        return model
+
+    def save_record_frame(self):
+        cv2.imwrite(os.path.join(self.out_img_path.format(self.timestamp), "{:0>4d}.jpg".format(self.count)), img)
+        if self.checkBox_body.isChecked():
+            body = os.path.join(self.out_body_path.format(self.timestamp), "{:0>4d}_body.npy".format(self.count))
+            np.save(body, self.datum.poseKeypoints)
+        if self.checkBox_hand.isChecked():
+            hand = os.path.join(self.out_hand_path.format(self.timestamp), "{:0>4d}_hand.npy".format(self.count))
+            np.save(hand, self.datum.handKeypoints)
+        if self.checkBox_face.isChecked():
+            face = os.path.join(self.out_face_path.format(self.timestamp), "{:0>4d}_face.npy".format(self.count))
+            np.save(face, self.datum.faceKeypoints)
+
     def show_frame(self):
         _, frame = self.cap.read()
+        if frame is None:
+            print("camera error")
+            return
+
         img = self.process_image(frame)
         if self.is_writing:
             self.count += 1
-            cv2.imwrite(os.path.join(self.out_img_path.format(self.timestamp), "{:0>4d}.jpg".format(self.count)), img)
-            if self.checkBox_body.isChecked():
-                body = os.path.join(self.out_body_path.format(self.timestamp), "{:0>4d}_body.npy".format(self.count))
-                np.save(body, self.datum.poseKeypoints)
-            if self.checkBox_hand.isChecked():
-                hand = os.path.join(self.out_hand_path.format(self.timestamp), "{:0>4d}_hand.npy".format(self.count))
-                np.save(hand, self.datum.handKeypoints)
-            if self.checkBox_face.isChecked():
-                face = os.path.join(self.out_face_path.format(self.timestamp), "{:0>4d}_face.npy".format(self.count))
-                np.save(face, self.datum.faceKeypoints)
+            self.save_record_frame()  # 保存图片，关节点
             t = str(time.time() - self.start_time)[:4]
             cv2.putText(img, t, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
 
-        if self.checkBox_hand.isChecked():
+        if self.is_gesture_recognition:
             hand_keypoints = self.datum.handKeypoints
-            # print(type(hand_keypoint))  # list
-            # print(len(hand_keypoint))  # 2
-            # print(type(hand_keypoint[0]))  # 左手 ndarray
-            # print(hand_keypoint[0].shape)  # shape = (num_person, 21, 3)
             for hand in hand_keypoints:
-                if hand.size == 1: continue
+                if hand.size == 1:
+                    continue
                 for i in range(hand.shape[0]):
                     single_hand = hand[i, :, :2]
-                    single_hand[:, 0] /= 640
-                    single_hand[:, 1] /= 480
-                    single_hand = ToTensor()(single_hand).cuda()
-                    single_hand = single_hand.view(1, -1)
-                    out = model(single_hand)
-                    out = F.softmax(out)
-                    # print(out)
-                    if torch.max(out, 1)[0].item() > 0.70:
-                        print(idx_to_class[torch.max(out, 1)[1].item()])
+                    self.gesture_recognize(single_hand)  # 识别单个手
 
         self.update_label(img)
+
+    def gesture_recognize(self, hand):
+        hand[:, 0] /= 640
+        hand[:, 1] /= 480
+        hand = ToTensor()(hand)
+        if torch.cuda.is_available():
+            hand = hand.cuda()
+        hand = hand.view(1, -1)
+        out = self.gesture_model(hand)
+        out = F.softmax(out, 1)
+        value, index = torch.max(out, 1)
+        if value.item() > self.gesture_threshold:
+            print(self.idx_to_gesture[index.item()], value.item())
+            return self.idx_to_gesture[index.item()]
+        else:
+            return None
 
     def tree_clicked(self, file_index):
         file_name = self.tree_model.filePath(file_index)
@@ -239,6 +263,7 @@ class MyApp(QMainWindow):
             return
 
         if not self.is_writing:
+            # 启动录制
             self.pushButton_webcam.setEnabled(False)
             self.pushButton_save.setEnabled(False)
             self.pushButton_folder.setEnabled(False)
@@ -256,6 +281,7 @@ class MyApp(QMainWindow):
             if not os.path.exists(self.out_face_path.format(self.timestamp)):
                 os.makedirs(self.out_face_path.format(self.timestamp))
         else:
+            # 停止录制
             self.pushButton_webcam.setEnabled(True)
             self.pushButton_save.setEnabled(True)
             self.pushButton_folder.setEnabled(True)
@@ -294,6 +320,7 @@ class MyApp(QMainWindow):
     def check_hand(self, status):
         flag = True if status == Qt.Checked else False
         self.horizontalSlider_Hand.setEnabled(flag)
+        self.checkBox_gesture.setEnabled(flag)
         self.params["hand"] = flag
         self.update_wrapper()
 
@@ -302,6 +329,10 @@ class MyApp(QMainWindow):
         self.horizontalSlider_Face.setEnabled(flag)
         self.params["face"] = flag
         self.update_wrapper()
+
+    def check_gesture(self, status):
+        flag = True if status == Qt.Checked else False
+        self.is_gesture_recognition = flag
 
     def change_body_threshold(self):
         value = self.horizontalSlider_Body.value()
