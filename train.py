@@ -92,7 +92,7 @@ def inference():
 
 
 if __name__ == "__main__":
-    model = Model(42, 28, 3)
+    model = Model(42, 28, 4)
     model = model.cuda()
     for layer in model.modules():
         if isinstance(layer, nn.Linear):

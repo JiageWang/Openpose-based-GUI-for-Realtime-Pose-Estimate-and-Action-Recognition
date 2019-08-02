@@ -29,7 +29,6 @@ except ImportError as e:
     raise e
 
 
-
 class MyApp(QMainWindow):
     def __init__(self):
         super(MyApp, self).__init__()
@@ -76,8 +75,9 @@ class MyApp(QMainWindow):
         self.start_time = 0
         self.count = 0
 
-        self.gesture_model = self.get_gesture_model("model@acc0.980.pth")
-        self.idx_to_gesture = {0: 'eight', 1: 'handssors', 2: 'normal'}
+        self.gesture_model = self.get_gesture_model("model@acc1.000.pth")
+        self.idx_to_gesture = {0: 'eight', 1: 'five', 2: 'handssors', 3: 'normal'}
+        # {'eight': 0, 'five': 1, 'handssors': 2, 'normal': 3}
         self.gesture_threshold = 0.8
 
         self.init_openpose()
@@ -149,15 +149,6 @@ class MyApp(QMainWindow):
         # 图像显示标签
         self.label_frame.setScaledContents(True)
 
-    @staticmethod
-    def get_gesture_model(weights_path):
-        model = Model(42, 28, 3)
-        model.load_state_dict(torch.load(weights_path))
-        if torch.cuda.is_available():
-            model = model.cuda()
-        model.eval()
-        return model
-
     def save_record_frame(self):
         cv2.imwrite(os.path.join(self.out_img_path.format(self.timestamp), "{:0>4d}.jpg".format(self.count)), img)
         if self.checkBox_body.isChecked():
@@ -189,6 +180,8 @@ class MyApp(QMainWindow):
                 if hand.size == 1:
                     continue
                 for i in range(hand.shape[0]):
+                    if np.sum(hand[i, :, 2]) < 21 * 0.5:
+                        continue
                     single_hand = hand[i, :, :2]
                     self.gesture_recognize(single_hand)  # 识别单个手
 
@@ -358,6 +351,15 @@ class MyApp(QMainWindow):
     def update_wrapper(self):
         self.op_wrapper.configure(self.params)
         self.op_wrapper.start()
+
+    @staticmethod
+    def get_gesture_model(weights_path):
+        model = Model(42, 28, 4)
+        model.load_state_dict(torch.load(weights_path))
+        if torch.cuda.is_available():
+            model = model.cuda()
+        model.eval()
+        return model
 
 
 if __name__ == "__main__":

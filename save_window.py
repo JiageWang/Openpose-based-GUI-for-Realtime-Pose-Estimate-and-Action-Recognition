@@ -22,7 +22,7 @@ class SaveWindow(QWidget):
         self.output_hand_path = os.path.join(self.output_path, "hand")
         self.output_face_path = os.path.join(self.output_path, "face")
         self.init_out_path()
-        self.count = 102
+        self.count = 0
 
     def init_out_path(self):
         if not os.path.exists(self.output_img_path):
