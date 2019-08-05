@@ -75,10 +75,11 @@ class MyApp(QMainWindow):
         self.start_time = 0
         self.count = 0
 
-        self.gesture_model = self.get_gesture_model("model@acc1.000.pth")
-        self.idx_to_gesture = {0: 'eight', 1: 'five', 2: 'handssors', 3: 'normal'}
+        self.gesture_model = self.get_gesture_model("model@acc0.992.pth")
+        self.idx_to_gesture = {0: 'eight', 1: 'five', 2: 'handssors', 3: 'normal', 4: 'ten'}
+        # {'eight': 0, 'five': 1, 'handssors': 2, 'normal': 3, 'ten': 4}
         # {'eight': 0, 'five': 1, 'handssors': 2, 'normal': 3}
-        self.gesture_threshold = 0.8
+        self.gesture_threshold = 0.57
 
         self.init_openpose()
         self.init_checkbox()
@@ -149,7 +150,7 @@ class MyApp(QMainWindow):
         # 图像显示标签
         self.label_frame.setScaledContents(True)
 
-    def save_record_frame(self):
+    def save_record_frame(self, img):
         cv2.imwrite(os.path.join(self.out_img_path.format(self.timestamp), "{:0>4d}.jpg".format(self.count)), img)
         if self.checkBox_body.isChecked():
             body = os.path.join(self.out_body_path.format(self.timestamp), "{:0>4d}_body.npy".format(self.count))
@@ -170,7 +171,7 @@ class MyApp(QMainWindow):
         img = self.process_image(frame)
         if self.is_writing:
             self.count += 1
-            self.save_record_frame()  # 保存图片，关节点
+            self.save_record_frame(img)  # 保存图片，关节点
             t = str(time.time() - self.start_time)[:4]
             cv2.putText(img, t, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
 
@@ -354,7 +355,7 @@ class MyApp(QMainWindow):
 
     @staticmethod
     def get_gesture_model(weights_path):
-        model = Model(42, 28, 4)
+        model = Model(42, 32, 5)
         model.load_state_dict(torch.load(weights_path))
         if torch.cuda.is_available():
             model = model.cuda()

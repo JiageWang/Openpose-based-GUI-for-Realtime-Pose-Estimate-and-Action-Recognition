@@ -1,3 +1,5 @@
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,11 +20,6 @@ class Model(nn.Module):
         self.layer2 = nn.Linear(n_hidden1, out_dim)
 
     def forward(self, x):
-        # x = self.layer1(x)
-        # x = F.relu(x)
-        # x = self.layer2(x)
-        # x = F.relu(x)
-        # x = self.layer3(x)
         x = F.relu(self.layer1(x))
         x = self.layer2(x)
         return x
@@ -46,8 +43,8 @@ def valid(epoch):
     writer.add_scalar("test_acc", acc_epoch, epoch)
     print('test_acc : %.4f' % acc_epoch)
     # 保存模型
-    if acc_epoch > 0.8 and acc_epoch > best_valid_acc:
-        torch.save(model.state_dict(), 'model@acc%.3f.pth' % acc_epoch)
+    if acc_epoch > 0.9 and acc_epoch > best_valid_acc:
+        torch.save(model.state_dict(), 'model{}_class{}@acc{:.3}.pth'.format(hidden, class_num, acc_epoch))
         best_valid_acc = acc_epoch
 
 
@@ -63,7 +60,7 @@ def train(epoch):
         outputs = model(inputs)
         # 计算损失
         loss = criterion(outputs, targets)
-        total_loss += loss.item() * inputs.size(0)
+        total_loss += loss.item()
         # 统计正确个数
         _, preds = torch.max(outputs.data, 1)
         num_correct += torch.sum(preds == targets.data).item()
@@ -80,7 +77,7 @@ def train(epoch):
 
 def inference():
     global model
-    model.load_state_dict(torch.load("model@acc0.909.pth"))
+    model.load_state_dict(torch.load("model@acc0.937.pth"))
     model = model.eval()
     for inputs, targets in test_dataloader:
         # 前向传播
@@ -92,19 +89,23 @@ def inference():
 
 
 if __name__ == "__main__":
-    model = Model(42, 28, 4)
+    class_num = 5
+    batch_size = 20
+    hidden = 30
+    lr = 1e-3
+    model = Model(42, hidden, class_num)
     model = model.cuda()
     for layer in model.modules():
         if isinstance(layer, nn.Linear):
             torch.nn.init.normal_(layer.weight.data, 0, 0.5)
 
-    train_dataset = HandDataset(r"C:\Users\Administrator\Desktop\train")
-    train_dataloader = DataLoader(train_dataset, 10, shuffle=True)
-    test_dataset = HandDataset(r"C:\Users\Administrator\Desktop\test")
-    test_dataloader = DataLoader(test_dataset, 10, shuffle=True)
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+    train_dataset = HandDataset(r"C:\Users\Administrator\Desktop\自建数据集\hand", train=True)
+    train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
+    test_dataset = HandDataset(r"C:\Users\Administrator\Desktop\自建数据集\hand", train=False)
+    test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     criterion = nn.CrossEntropyLoss()
-    writer = SummaryWriter("logs/")
+    writer = SummaryWriter("logs/model{}_class{}_batch{}_lr{}_{}".format(hidden, class_num, batch_size, lr, str(int(time.time()))))
     best_valid_acc = 0
 
     for i in range(10000):

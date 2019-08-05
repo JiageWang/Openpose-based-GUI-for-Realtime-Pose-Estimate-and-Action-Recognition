@@ -1,23 +1,33 @@
 import os
+import random
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 
+
 class HandDataset(Dataset):
-    def __init__(self, path, transform=None):
+    def __init__(self, path, transform=None, train=True, train_percent=0.7):
         super().__init__()
+        random.seed(10)
         self.root = path
         self.transform = transform
+        self.is_trian = train
+        self.train_percent = train_percent
         self.class_to_idx = self._find_classes()
-        self.samples = self._make_samples()
+        self.train_samples, self.valid_samples = self._make_samples()
 
     def _make_samples(self):
-        samples = []
+        train_samples = []
+        valid_samples = []
         for folder in os.listdir(self.root):
             for npy in os.listdir(os.path.join(self.root, folder, "hand")):
                 npy_file = os.path.join(self.root, folder, "hand", npy)
-                samples.append((npy_file, folder))
-        return samples
+                if random.random() < self.train_percent:
+                    train_samples.append((npy_file, folder))
+                else:
+                    valid_samples.append((npy_file, folder))
+
+        return train_samples, valid_samples
 
     def _find_classes(self):
         classes = [d for d in os.listdir(self.root) if os.path.isdir(os.path.join(self.root, d))]
@@ -26,10 +36,18 @@ class HandDataset(Dataset):
         return class_to_idx
 
     def __len__(self):
-        return len(self.samples)
+        if self.is_trian:
+            return len(self.train_samples)
+        else:
+            return len(self.valid_samples)
 
     def __getitem__(self, item):
-        sample = self.samples[item][0]
+        if self.is_trian:
+            sample = self.train_samples[item][0]
+            hand_label = self.class_to_idx[self.train_samples[item][1]]
+        else:
+            sample = self.valid_samples[item][0]
+            hand_label = self.class_to_idx[self.valid_samples[item][1]]
         hands_keypoints = np.load(sample)[:, 0, :, :]
         if np.sum(hands_keypoints[0, :, 2]) > np.sum(hands_keypoints[1, :, 2]):
             hands_keypoints = hands_keypoints[0, :, :2]
@@ -41,15 +59,14 @@ class HandDataset(Dataset):
         if self.transform:
             hands_keypoints = self.transform(hands_keypoints)
 
-        hand_label = self.class_to_idx[self.samples[item][1]]
 
         return hands_keypoints, hand_label
 
 
 if __name__ == "__main__":
-    dataset = HandDataset(r"C:\Users\Administrator\Desktop\train")
-    dataloader = DataLoader(dataset, 10, shuffle=True)
-
-    for data, label in dataloader:
-        data = data.view(data.shape[0], -1)
-        print(data.shape)
+    dataset1 = HandDataset(r"C:\Users\Administrator\Desktop\train", train=True)
+    dataset2 = HandDataset(r"C:\Users\Administrator\Desktop\train", train=False)
+    dataloader1 = DataLoader(dataset1, 1, shuffle=True)
+    dataloader2 = DataLoader(dataset2, 1, shuffle=True)
+    print(next(iter(dataloader1)))
+    print(next(iter(dataloader2)))
