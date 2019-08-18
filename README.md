@@ -18,9 +18,8 @@
 - Install [cuda10](https://developer.nvidia.com/cuda-downloads) and [cudnn7]. Or here is my [BaiduDisk](https://pan.baidu.com/s/1EcVfsA7R4dIkj8kJqc9K9g)  password：`4685`.
 
 - Run `models/getModels.bat` to get model. Or here is my [BaiduDisk](https://pan.baidu.com/s/14SV-v8CXRPMVoMvPoB2Haw)  password：`rmkn` and put models in the corresponding position.
-
-    ![](media\model_folder.png)
-
+    ![avatar](media\model_folder.png)
+    
 - Download 3rd-party dlls from my [BaiduDisk](https://pan.baidu.com/s/1Cco38Py2G70s559qDt_g6g) password：`64sg` and unzip in your 3rdparty folder.
 
 ## Usage
@@ -35,9 +34,9 @@
 
 5. You will get a output folder like the following figure. The count is set to 0 when the program begins and will automatically increase with the number of images saved.
 
-   ![save_folder](media\save_folder.png)
+   ![avatar](media\save_folder.png)
 
-   ![data](media\data.png)
+   ![avatar](media\data.png)
 
 6. The key-points is saved as ndarray and you can read the data using code like `np.load('0001_body.npy')`to get the data. Take body key-points for instance, it is a array with shape of `n x 25 x 3​`, here n means the number of person, 25 means 25 key-points on one person and 3 means `(x, y, score)`
 7. The function of `gesture recognition` can only be used when the hand checkbox is on. My model is only a 2 layers MLP, and the data was collected with front camera and left hand. So it may have many limitations. Your can train your own model and replace it.
