@@ -35,9 +35,9 @@
 
 5. You will get a output folder like the following figure. The count is set to 0 when the program begins and will automatically increase with the number of images saved.
 
-   ![save_folder](C:\Users\Administrator\Downloads\openpose-python\media\save_folder.png)
+   ![save_folder](media\save_folder.png)
 
-   ![data](C:\Users\Administrator\Downloads\openpose-python\media\data.png)
+   ![data](media\data.png)
 
 6. The key-points is saved as ndarray and you can read the data using code like `np.load('0001_body.npy')`to get the data. Take body key-points for instance, it is a array with shape of `n x 25 x 3​`, here n means the number of person, 25 means 25 key-points on one person and 3 means `(x, y, score)`
 7. The function of `gesture recognition` can only be used when the hand checkbox is on. My model is only a 2 layers MLP, and the data was collected with front camera and left hand. So it may have many limitations. Your can train your own model and replace it.
