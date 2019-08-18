@@ -1,4 +1,4 @@
-# GUI-for-pose-estimate-and-Action-recognition
+# GUI-for-Pose-Estimate-and-Action-Recognition
 ![avatar](media/gui.png)
 
 ## Introduction
