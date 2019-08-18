@@ -37,7 +37,7 @@ class MyApp(QMainWindow):
         self.setWindowIcon(QIcon('media/logo.png'))
 
         self.params = {
-            # "net_resolution": "128x96",
+            "net_resolution": "128x96",  # uncomment if cuda error
             "model_folder": "models/",
             "body": 1,
             "render_pose": 0,
@@ -356,9 +356,11 @@ class MyApp(QMainWindow):
     @staticmethod
     def get_gesture_model(weights_path):
         model = Model(42, 32, 5)
-        model.load_state_dict(torch.load(weights_path))
         if torch.cuda.is_available():
+            model.load_state_dict(torch.load(weights_path))
             model = model.cuda()
+        else:
+            model.load_state_dict(torch.load(weights_path, map_location=lambda storage, loc: storage))
         model.eval()
         return model
 
