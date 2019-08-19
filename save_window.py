@@ -1,6 +1,7 @@
 import os
 import time
 import numpy as np
+from PyQt5.QtGui import QIcon
 
 from PyQt5.QtWidgets import QWidget
 from PyQt5.uic import loadUi
@@ -10,6 +11,7 @@ class SaveWindow(QWidget):
     def __init__(self):
         super().__init__()
         loadUi("ui/save_window.ui", self)
+        self.setWindowIcon(QIcon('media/snipaste.png'))
         self.setWindowTitle("Snipaste")
         self.body_keypoint = None
         self.hand_keypoint = None
@@ -31,6 +33,8 @@ class SaveWindow(QWidget):
             os.makedirs(self.output_hand_path)
         if not os.path.exists(self.output_body_path):
             os.makedirs(self.output_body_path)
+        if not os.path.exists(self.output_face_path):
+            os.makedirs(self.output_face_path)
 
     def saveCurrent(self):
         self.count += 1

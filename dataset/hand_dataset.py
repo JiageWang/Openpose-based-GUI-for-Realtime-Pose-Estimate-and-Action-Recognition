@@ -4,7 +4,6 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 
-
 class HandDataset(Dataset):
     def __init__(self, path, transform=None, train=True, train_percent=0.7):
         super().__init__()
@@ -59,8 +58,11 @@ class HandDataset(Dataset):
         if self.transform:
             hands_keypoints = self.transform(hands_keypoints)
 
-
         return hands_keypoints, hand_label
+
+    @property
+    def num_classes(self):
+        return len(self.class_to_idx)
 
 
 if __name__ == "__main__":

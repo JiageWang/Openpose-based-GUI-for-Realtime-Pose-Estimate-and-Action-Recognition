@@ -1,4 +1,5 @@
 import time
+import argparse
 
 import torch
 import torch.nn as nn
@@ -89,23 +90,33 @@ def inference():
 
 
 if __name__ == "__main__":
-    class_num = 5
-    batch_size = 20
-    hidden = 30
-    lr = 1e-3
-    model = Model(42, hidden, class_num)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path', '-p', help='dataset path')
+    parser.add_argument('--batch_size', '-b', default=20)
+    parser.add_argument('--hidden', default=32, help='hidden layer neural number')
+    parser.add_argument('--lr', '-l', default=1e-3, help='learning rate')
+    args = parser.parse_args()
+
+    # init dataloader
+    train_dataset = HandDataset(args.path, train=True)
+    train_dataloader = DataLoader(train_dataset, args.batch_size, shuffle=True)
+    test_dataset = HandDataset(args.path, train=False)
+    test_dataloader = DataLoader(test_dataset, args.batch_size, shuffle=True)
+
+    # init model
+    num_classes = train_dataset.num_classes
+
+    model = Model(42, args.hidden, num_classes)
     model = model.cuda()
     for layer in model.modules():
         if isinstance(layer, nn.Linear):
             torch.nn.init.normal_(layer.weight.data, 0, 0.5)
 
-    train_dataset = HandDataset(r"C:\Users\Administrator\Desktop\自建数据集\hand", train=True)
-    train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
-    test_dataset = HandDataset(r"C:\Users\Administrator\Desktop\自建数据集\hand", train=False)
-    test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
     criterion = nn.CrossEntropyLoss()
-    writer = SummaryWriter("logs/model{}_class{}_batch{}_lr{}_{}".format(hidden, class_num, batch_size, lr, str(int(time.time()))))
+    writer = SummaryWriter(
+        "logs/model{}_class{}_batch{}_lr{}_{}".format(args.hidden, num_classes, args.batch_size, args.lr,
+                                                      str(int(time.time()))))
     best_valid_acc = 0
 
     for i in range(10000):
@@ -113,4 +124,3 @@ if __name__ == "__main__":
         train(i)
         valid(i)
 
-    # inference()

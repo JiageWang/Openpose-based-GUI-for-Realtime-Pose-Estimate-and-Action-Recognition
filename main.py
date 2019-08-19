@@ -37,7 +37,7 @@ class MyApp(QMainWindow):
         self.setWindowIcon(QIcon('media/logo.png'))
 
         self.params = {
-            "net_resolution": "128x96",  # uncomment if cuda error
+            # "net_resolution": "128x96",  # uncomment if cuda error
             "model_folder": "models/",
             "body": 1,
             "render_pose": 0,
@@ -75,9 +75,8 @@ class MyApp(QMainWindow):
         self.start_time = 0
         self.count = 0
 
-        self.gesture_model = self.get_gesture_model("model@acc0.992.pth")
+        self.gesture_model = self.get_gesture_model("models/gesture/model@acc0.992.pth")
         self.idx_to_gesture = {0: 'eight', 1: 'five', 2: 'handssors', 3: 'normal', 4: 'ten'}
-        # {'eight': 0, 'five': 1, 'handssors': 2, 'normal': 3, 'ten': 4}
         # {'eight': 0, 'five': 1, 'handssors': 2, 'normal': 3}
         self.gesture_threshold = 0.57
 
@@ -177,6 +176,7 @@ class MyApp(QMainWindow):
 
         if self.is_gesture_recognition:
             hand_keypoints = self.datum.handKeypoints
+            # print(hand_keypoints)
             for hand in hand_keypoints:
                 if hand.size == 1:
                     continue
@@ -184,9 +184,21 @@ class MyApp(QMainWindow):
                     if np.sum(hand[i, :, 2]) < 21 * 0.5:
                         continue
                     single_hand = hand[i, :, :2]
-                    self.gesture_recognize(single_hand)  # 识别单个手
+                    x, y, w, h = self.find_hand_bbox(single_hand)
+                    cv2.rectangle(img, (x, y), (x+w, y+h), (255, 255, 255))
+                    gesture = self.gesture_recognize(single_hand)  # 识别单个手
+                    cv2.putText(img, gesture, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
 
         self.update_label(img)
+
+    def find_hand_bbox(self, single_hand):
+        n_points = single_hand.shape[0]
+        points_list = []
+        for i in range(n_points):
+            if np.sum(single_hand[i, :]) != 0:
+                points_list.append(single_hand[i, :])
+        rect = cv2.boundingRect(np.array(points_list))
+        return rect
 
     def gesture_recognize(self, hand):
         hand[:, 0] /= 640

@@ -37,7 +37,7 @@ for i in range(0, len(args[1])):
         key = curr_item.replace('-', '')
         if key not in params: params[key] = next_item
 
-# Starting OpenPose
+# Starting OpenPos
 opWrapper = op.WrapperPython(3)
 opWrapper.configure(params)
 opWrapper.execute()
