@@ -58,7 +58,7 @@ print(data_face.shape)
 ## Train your own model
 1. Collect data and make folder for every class.
 
-   ![train_data_format](C:\Users\Administrator\Desktop\pyopenpose\media\train_data_format.png)
+   ![train_data_format](media/train_data_format.png)
 
 2. run `python train.py -p C:\Users\Administrator\Desktop\自建数据集\hand` to train your model(replace path with your dataset path)
 
