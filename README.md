@@ -1,5 +1,5 @@
 # GUI-for-Pose-Estimate-and-Action-Recognition
-![avatar](media/gesture_recognition.gif)
+![avatar](media/demo.gif)
 
 ## Introduction
 
@@ -12,37 +12,43 @@
 * numpy==1.14.2
 * PyQt5==5.11.3
 * opencv-python==4.1.0.25
-* torch==1.0.1(only for training and recognition)
+* torch==1.0.1(only for gesture recognition)
 
 ## Installation
 - Install [cuda10](https://developer.nvidia.com/cuda-downloads) and [cudnn7]. Or here is my [BaiduDisk](https://pan.baidu.com/s/1EcVfsA7R4dIkj8kJqc9K9g)  password：`4685`.
 
 - Run `models/getModels.bat` to get model. Or here is my [BaiduDisk](https://pan.baidu.com/s/14SV-v8CXRPMVoMvPoB2Haw)  password：`rmkn` and put models in the corresponding position
-    
+  
     ![avatar](media/model_folder.png)
     
 - Download 3rd-party dlls from my [BaiduDisk](https://pan.baidu.com/s/1Cco38Py2G70s559qDt_g6g) password：`64sg` and unzip in your 3rdparty folder.
 
 ## Usage
+1. ![avatar](icon/save.png) : save current result
+2. ![avatar](icon/autosave.png) : save result every interval while  camera or video is opening
+3. ![avatar](icon/folder.png) : open folder
+4. ![avatar](icon/image.png) : open image
+5. ![avatar](icon/video.png) : open camera
+6. ![avatar](icon/camera.png) : open camera
+7. ![avatar](icon/setting.png) : show setting view
+8. ![avatar](icon/filetree.png) : show filetree view
 
-1.  First, you should select which kind of key-points do you want to visualize or collect by checking the checkbox(`Body`, `Hand`, `Face`).
+## Setting
+1. First, you should select which kind of key-points do you want to visualize or collect by checking the checkbox(`Body`, `Hand`, `Face`).
+2. The threshold of three model can be controled by draging corresponding slider.
+3. Change save interval.
+4. Change net resolution for smaller GPU memery, but it will  reduce the accuracy.
+5. The function of `gesture recognition` can only be used when the hand checkbox is on. My model is only a 2 layers MLP, and the data was collected with front camera and left hand. So it may have many limitations. Your can train your own model and replace it.
 
-2. Click `Open webcam` for running on your local camera or double click image file in the directory tree for running on a single image. Your can also change the current folder by click `Alter Folder`
+## TODO
 
-3. The threshold of three model can be controled by draging corresponding slider.
+* action recognition
 
-4. Click `Save Result` for saving the current frame and the key-points that you have selected. Or your can click `Begin Record` when you are running on camera to get continuous frames. 
-
-    ![save_window](media/save_window.png)
-
-5. You will get a output folder like the following figure. The count is set to 0 when the program begins and will automatically increase with the number of images saved.
-
-   ![save_folder](media/save_folder.png)
-
-6. The function of `gesture recognition` can only be used when the hand checkbox is on. My model is only a 2 layers MLP, and the data was collected with front camera and left hand. So it may have many limitations. Your can train your own model and replace it.
+* emotion recognition
 
 ## Data format
-
+You will get a output folder like the following figure. The count is set to 0 when the program begins and will automatically increase with the number of images saved.
+![avatar](media/save_folder.png)
 ```python
 data_body = np.load('body/0001_body.npy')
 data_hand = np.load('hand/0001_hand.npy')

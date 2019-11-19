@@ -1,0 +1,5 @@
+/* 设置标签样式 */
+LabelFrame{
+    background-color: #000000;
+}
+
