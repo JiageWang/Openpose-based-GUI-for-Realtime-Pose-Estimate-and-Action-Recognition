@@ -24,9 +24,10 @@ class Model(nn.Module):
 
 
 class GestureModel(object):
-    def __init__(self, path="models/gesture/model@acc0.992.pth"):
+    def __init__(self, path):
         self.gesture_model = self.get_gesture_model(path)
         self.idx_to_gesture = {0: 'eight', 1: 'five', 2: 'handssors', 3: 'normal', 4: 'ten'}
+        # self.idx_to_gesture = {0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6:'six', 7:'seven', 8:'eight', 9:'nine'}
         self.gesture_threshold = 0.57
 
     def __call__(self, hand):

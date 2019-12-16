@@ -48,7 +48,15 @@ class HandDataset(Dataset):
             sample = self.valid_samples[item][0]
             hand_label = self.class_to_idx[self.valid_samples[item][1]]
         hands_keypoints = np.load(sample)[:, 0, :, :]
-        if np.sum(hands_keypoints[0, :, 2]) > np.sum(hands_keypoints[1, :, 2]):
+
+        # 单手
+        # if np.sum(hands_keypoints[0, :, 2]) > np.sum(hands_keypoints[1, :, 2]):
+        #     hands_keypoints = hands_keypoints[0, :, :2]
+        # else:
+        #     hands_keypoints = hands_keypoints[1, :, :2]
+
+        # 双手
+        if random.random()>0.5:
             hands_keypoints = hands_keypoints[0, :, :2]
         else:
             hands_keypoints = hands_keypoints[1, :, :2]
@@ -66,8 +74,8 @@ class HandDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset1 = HandDataset(r"C:\Users\Administrator\Desktop\train", train=True)
-    dataset2 = HandDataset(r"C:\Users\Administrator\Desktop\train", train=False)
+    dataset1 = HandDataset(r"E:\BaiduNetdiskDownload\dataset", train=True)
+    dataset2 = HandDataset(r"E:\BaiduNetdiskDownload\dataset", train=False)
     dataloader1 = DataLoader(dataset1, 1, shuffle=True)
     dataloader2 = DataLoader(dataset2, 1, shuffle=True)
     print(next(iter(dataloader1)))

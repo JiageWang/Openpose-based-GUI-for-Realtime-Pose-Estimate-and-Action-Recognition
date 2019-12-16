@@ -3,46 +3,62 @@ from PyQt5.QtCore import QTimer
 
 
 class Camera(object):
-    def __init__(self, main_window):
-        self.main_window = main_window
-        self.is_pause = False
+    def __init__(self):
+        self.device = 0
         self.cap = cv2.VideoCapture()
         self.timer = QTimer()
 
     def stop(self):
-        if not self.cap.isOpened():
-            return False
         self.timer.stop()
         self.cap.release()
         return True
 
-    def start(self, device=0):
+    def pause(self):
+        self.timer.stop()
+
+    def begin(self):
+        self.timer.start(20)
+
+    def start(self, device):
         if self.cap.isOpened():
-            return False
+            self.cap.release()
         self.timer.start(20)
         self.cap.open(device)
+        self.device = device
         return True
 
-    def frame(self):
-        if self.cap.isOpened() and not self.is_pause:
-            return self.cap.read()[1]
+    def restart(self):
+        self.start(self.device)
 
+    @property
+    def is_pause(self):
+        return self.cap.isOpened() and not self.timer.isActive()
+
+    @property
     def is_open(self):
         return self.cap.isOpened()
 
     @property
+    def frame(self):
+        if self.is_open and not self.is_pause:
+            return self.cap.read()[1]
+
+    @property
     def frame_count(self):
-        if self.cap.isOpened():
+        if self.is_open:
             return self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
 
     @property
     def frame_pos(self):
-        return self.cap.get(cv2.CAP_PROP_POS_FRAMES)
+        if self.is_open:
+            return self.cap.get(cv2.CAP_PROP_POS_FRAMES)
 
     @frame_pos.setter
     def frame_pos(self, value):
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, value)
+        if self.is_open:
+            self.cap.set(cv2.CAP_PROP_POS_FRAMES, value)
 
     @property
     def resolution(self):
-        return self.cap.get(cv2.CAP_PROP_FRAME_WIDTH), self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        if self.is_open:
+            return self.cap.get(cv2.CAP_PROP_FRAME_WIDTH), self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)

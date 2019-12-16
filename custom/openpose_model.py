@@ -14,18 +14,16 @@ except ImportError as e:
 
 
 class OpenposeModel(object):
-    def __init__(self, main_window):
-        self.main_window = main_window
-
+    def __init__(self, hand=False, face=False):
         self.op_params = {
             "model_folder": "models/",
             "body": 1,
             "render_pose": 1,
             "render_threshold": 0.1,
-            "hand": False,
+            "hand": hand,
             "hand_render": 1,
             "hand_render_threshold": 0.2,
-            "face": False,
+            "face": face,
             "face_render": 1,
             "face_render_threshold": 0.4,
             "disable_blending": False  # black blackgroud if True

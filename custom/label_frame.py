@@ -6,10 +6,11 @@ import cv2
 
 class LabelFrame(QLabel):
     def __init__(self, parent=None):
-        super(LabelFrame, self).__init__()
+        super(LabelFrame, self).__init__(parent=parent)
         self.main_window = parent
         self.setAlignment(Qt.AlignCenter)  # 居中显示
         self.setMinimumSize(640, 480)
+        self.setStyleSheet("background-color: rgb(0, 0, 0);")  # 黑底
 
     def update_frame(self, frame):
         pixmap = self.img_to_pixmap(frame)

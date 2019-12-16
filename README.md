@@ -25,13 +25,10 @@
 
 ## Usage
 1. ![avatar](icon/save.png) : save current result
-2. ![avatar](icon/autosave.png) : save result every interval while  camera or video is opening
-3. ![avatar](icon/folder.png) : open folder
-4. ![avatar](icon/image.png) : open image
-5. ![avatar](icon/video.png) : open camera
+2. ![avatar](icon/auto.png) : save result every interval while  camera or video is opening
 6. ![avatar](icon/camera.png) : open camera
 7. ![avatar](icon/setting.png) : show setting view
-8. ![avatar](icon/filetree.png) : show filetree view
+8. ![avatar](icon/dir.png) : show file-tree view
 
 ## Setting
 1. First, you should select which kind of key-points do you want to visualize or collect by checking the checkbox(`Body`, `Hand`, `Face`).

@@ -3,3 +3,8 @@ LabelFrame{
     background-color: #000000;
 }
 
+
+SettingDock{
+    background-color: #3c3f41
+}
+
